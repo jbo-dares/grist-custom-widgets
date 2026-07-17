@@ -1,7 +1,3 @@
-Tu as tout à fait raison ! Tu as raison, c'est une mauvaise compréhension de ma réponse. Voici une version corrigée du README qui explique exactement comment utiliser les widgets directement depuis GitLab sans passer par un clone local.
-
----
-
 # 🧩 Grist Custom Widgets
 
 Ce dépôt contient une collection centralisée de **widgets personnalisés pour Grist**, permettant de créer des interfaces riches et réutilisables à travers plusieurs pages ou documents Grist.
@@ -78,4 +74,4 @@ Ce projet est sous licence MIT – voir le fichier [LICENSE](./LICENSE) pour plu
 
 ---
 
-Cette version est beaucoup plus simple et directe : vous pouvez utiliser directement les widgets depuis GitLab sans avoir besoin de cloner localement. Le principe est de pointer directement vers les fichiers `index.html` via leur URL RAW dans le Custom Widget Builder de Grist.
+Merci Pliage!
