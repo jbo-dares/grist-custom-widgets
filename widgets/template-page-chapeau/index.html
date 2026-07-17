@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fr" data-fr-theme>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- Grist API -->
+    <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+    <!-- DSFR CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/dsfr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/utility/utilities.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/utility/icons/icons.min.css">
+    <!-- Custom JS -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        //body { background-color: var(--background-default-grey); }
+        .fr-header,
+        .fr-header__brand {
+            filter: none !important;
+            --hover: transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <header role="banner" class="fr-header">
+        <div class="fr-header__body">
+            <div class="fr-container">
+                <div class="fr-header__body-row">
+                    <div class="fr-header__brand fr-enlarge-link">
+                        <div class="fr-header__brand-top">
+                            <div class="fr-header__logo">
+                                <p class="fr-logo" id="intitule-officiel">République<br>Française</p>
+                            </div>
+                            <div class="fr-header__operator" id="operator-section" style="display: none;">
+                                <img class="fr-responsive-img" src="" id="logo-img" alt="Logo Partenaire" style="max-height: 5rem;">
+                            </div>
+                        </div>
+                        <div class="fr-header__service">
+                            <a href="#" title="Accueil">
+                                <p class="fr-header__service-title" id="txt-titre">En attente de configuration...</p>
+                            </a>
+                            <p class="fr-header__service-tagline" id="txt-soustitre"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main role="main" id="content" class="fr-container fr-my-4w">
+        <div class="fr-grid-row">
+            <div class="fr-col-12">
+                <p class="fr-text--lead" id="txt-baseline"></p>
+                <hr class="fr-pb-2w">
+                <div id="txt-masque" class="fr-py-2w fr-text--left"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/dsfr.module.min.js" type="module"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/dsfr.nomodule.min.js" nomodule></script>
+
+    <script>
+        // 0. Personnalisation de marked.js pour l'adapter au DSFR
+        const renderer = {
+            blockquote(token) {
+                // 'token' est un objet. On demande au parseur interne de marked 
+                // de compiler le texte et les balises HTML situés à l'intérieur du bloc.
+                const insideHtml = this.parser.parse(token.tokens);
+                
+                // On encapsule le résultat dans la classe DSFR
+                return `<div class="fr-highlight">${insideHtml}</div>`;
+            }
+        };
+
+        // On applique cette règle de rendu à marked
+        marked.use({ renderer });
+
+        // 1. Configuration des colonnes Grist
+        grist.ready({
+            columns: [
+                { name: "intitule_officiel", title: "Bloc marque", type: "Text", optional: true },
+                { name: "nom_service", title: "Titre principal", type: "Text", description: "Titre principal" },
+                { name: "baseline", title: "Sous-titre", type: "Text", optional: true, description: "Sous-titre" },
+                { name: "chapeau", title: "Baseline / Chapeau", type: "Text", optional: true, description: "Chapeau" },
+                { name: "masque", title: "Texte / Masque (Markdown)", type: "Text", description: "Contenu" },
+                { name: "logo", title: "Logo", type: "Attachments", optional: true, description: "Logo à afficher à droite du bloc marque" }
+            ],
+            requiredAccess: 'full'
+        });
+
+        // 2. Fonction de gestion du Logo
+        async function updateLogo(logoAttachments) {
+            const operatorSection = document.getElementById('operator-section');
+            const logoImg = document.getElementById('logo-img');
+
+            if (!logoAttachments || !Array.isArray(logoAttachments) || logoAttachments.length === 0) {
+                operatorSection.style.display = 'none';
+                return;
+            }
+
+            try {
+                const tokenInfo = await grist.docApi.getAccessToken({ readOnly: true });
+                const attachmentId = logoAttachments.at(-1);
+                const logoUrl = `${tokenInfo.baseUrl}/attachments/${attachmentId}/download?auth=${tokenInfo.token}`;
+
+                logoImg.src = logoUrl;
+                logoImg.onload = () => {
+                    operatorSection.style.display = 'block';
+                };
+                logoImg.onerror = () => {
+                    operatorSection.style.display = 'none';
+                };
+
+            } catch (error) {
+                console.error('Erreur accès attachement:', error);
+                operatorSection.style.display = 'none';
+            }
+        }
+
+        // 3. Fonction principale de mise à jour
+        async function updateContent(mapped) {
+            if (!mapped) {
+                document.getElementById('txt-titre').textContent = "⚠️ En attente de configuration des colonnes";
+                return;
+            }
+
+            if (mapped.intitule_officiel) {
+                const intitule = mapped.intitule_officiel.replace(/\n/g, '<br>');
+                document.getElementById('intitule-officiel').innerHTML = intitule;
+            } else {
+                document.getElementById('intitule-officiel').innerHTML = 'République<br>Française';
+            }
+
+            if (mapped.logo) {
+                await updateLogo(mapped.logo);
+            } else {
+                document.getElementById('operator-section').style.display = 'none';
+            }
+
+            document.getElementById('txt-titre').textContent = mapped.nom_service || 'Titre non renseigné';
+            document.getElementById('txt-soustitre').textContent = mapped.baseline || '';
+            document.getElementById('txt-baseline').textContent = mapped.chapeau || '';
+
+            if (mapped.masque) {
+                document.getElementById('txt-masque').innerHTML = marked.parse(mapped.masque);
+            } else {
+                document.getElementById('txt-masque').innerHTML = "<p><em>Aucun masque renseigné pour cette page.</em></p>";
+            }
+        }
+
+        // 4. Réception du flux
+        grist.onRecords(async function (records, mappings) {
+            if (records && records.length > 0) {
+                const mapped = grist.mapColumnNames(records[0], mappings);
+                await updateContent(mapped);
+            } else {
+                await updateContent(null);
+            }
+        });
+    </script>
+</body>
+</html>
