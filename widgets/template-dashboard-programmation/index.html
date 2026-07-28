@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.12.1/dist/dsfr.min.css">
+  <style>
+    :root {
+      --bf-main: #000091;
+      --bf-light: #6a6af4;
+      --bg-alt: #f6f6f6;
+      --border-default: #e5e5e5;
+      --dsfr-green: #18753c;
+      --dsfr-green-bg: #e6f5e9;
+      --dsfr-orange: #b35900;
+      --dsfr-orange-bg: #fef4e6;
+      --dsfr-red: #ce0500;
+      --text-dark: #161616;
+    }
+
+    body {
+      font-family: Marianne, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #ffffff;
+      color: var(--text-dark);
+      margin: 0;
+      padding: 16px;
+    }
+
+    .moa-banner {
+      background-color: var(--bg-alt);
+      border-left: 4px solid var(--bf-main);
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      border-radius: 4px;
+    }
+
+    .moa-banner.multiple {
+      background-color: var(--dsfr-orange-bg);
+      border-left-color: var(--dsfr-orange);
+      color: #5c2d00;
+    }
+
+    /* KPIs Globaux */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: #ffffff;
+      border: 1px solid var(--border-default);
+      border-left: 5px solid var(--bf-main);
+      padding: 12px 16px;
+      border-radius: 4px;
+    }
+
+    .kpi-card.kpi-prev { border-left-color: var(--bf-main); }
+    .kpi-card.kpi-engage { border-left-color: var(--dsfr-green); }
+    .kpi-card.kpi-reste { border-left-color: var(--dsfr-orange); }
+    .kpi-card.kpi-pct-low { border-left-color: var(--bf-main); }
+    .kpi-card.kpi-pct-mid { border-left-color: var(--dsfr-orange); }
+    .kpi-card.kpi-pct-high { border-left-color: var(--dsfr-green); }
+    .kpi-card.kpi-pct-over { border-left-color: var(--dsfr-red); }
+
+    .kpi-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #666666;
+      margin: 0;
+    }
+
+    .kpi-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .kpi-prev .kpi-value { color: var(--bf-main); }
+    .kpi-engage .kpi-value { color: var(--dsfr-green); }
+    .kpi-reste .kpi-value { color: var(--dsfr-orange); }
+    .kpi-pct-low .kpi-value { color: var(--bf-main); }
+    .kpi-pct-mid .kpi-value { color: var(--dsfr-orange); }
+    .kpi-pct-high .kpi-value { color: var(--dsfr-green); }
+    .kpi-pct-over .kpi-value { color: var(--dsfr-red); }
+
+    /* Structuration */
+    .year-block { margin-bottom: 32px; }
+
+    .year-header {
+      border-bottom: 3px solid var(--bf-main);
+      padding-bottom: 6px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .year-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--bf-main);
+      margin: 0;
+    }
+
+    .year-stats { font-size: 0.9rem; font-weight: 700; }
+
+    /* Bloc Projet */
+    .project-block {
+      background-color: var(--bg-alt);
+      border: 1px solid var(--border-default);
+      border-left: 6px solid var(--bf-main);
+      padding: 16px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+
+    .project-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .project-header-main {
+      flex: 1 1 280px;
+      min-width: 0;
+    }
+
+    .project-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--bf-main);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .project-title:hover { text-decoration: underline; }
+
+    .project-title svg {
+      fill: var(--bf-main);
+      flex-shrink: 0;
+    }
+
+    .project-moa {
+      font-size: 0.825rem;
+      color: #444444;
+      margin-top: 4px;
+    }
+
+    .project-header-side {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .project-stats {
+      font-size: 0.85rem;
+      font-weight: 700;
+      background: #e3e3fd;
+      color: var(--bf-main);
+      padding: 4px 10px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    /* HISTOGRAMME : BORDURE 2PX ROUGE MARIANNE SANS FOND */
+    .histo-container {
+      background: #ffffff;
+      border: 2px solid var(--dsfr-red);
+      border-radius: 4px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+
+    .histo-container.histo-global {
+      background-color: #fafafa;
+      margin-bottom: 24px;
+    }
+
+    .histo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .histo-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--bf-main);
+      letter-spacing: 0.3px;
+    }
+
+    .histo-legend {
+      display: flex;
+      gap: 14px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-box {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .legend-box.prev { background: var(--bf-light); }
+    .legend-box.eng { background: var(--dsfr-green); }
+
+    /* Zone Graphique */
+    .histo-chart {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .histo-bars-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      height: 100px;
+      border-bottom: 2px solid #cecece;
+      padding-bottom: 0;
+    }
+
+    .histo-bar-col {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      height: 100%;
+    }
+
+    .histo-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      width: 90%;
+      max-width: 120px;
+      height: 100%;
+      justify-content: center;
+    }
+
+    .histo-bar {
+      flex: 1;
+      border-radius: 3px 3px 0 0;
+      transition: height 0.2s ease;
+    }
+
+    .histo-bar.bar-prev { background-color: var(--bf-light); }
+    .histo-bar.bar-eng { background-color: var(--dsfr-green); }
+
+    .histo-labels-row {
+      display: flex;
+      gap: 12px;
+      padding-top: 6px;
+    }
+
+    .histo-label-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .histo-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    .histo-subtext {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #555555;
+      text-align: center;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
+
+    /* Opérations */
+    .op-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .op-card {
+      background: #ffffff;
+      border: 1px solid var(--border-default);
+      padding: 12px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .op-card:hover {
+      border-color: var(--text-dark);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+
+    .op-card.has-alert { border-left: 4px solid var(--dsfr-red); }
+
+    .op-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .op-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin: 0;
+      color: var(--text-dark);
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .badge-group {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .fr-badge, .btn-edit {
+      white-space: nowrap;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 4px;
+    }
+
+    .fr-badge.fr-badge--error { border: 1px solid var(--dsfr-red); }
+    .fr-badge.fr-badge--info { border: 1px solid var(--bf-main); }
+
+    .btn-edit {
+      background: #ffffff;
+      border: 1px solid var(--bf-main);
+      color: var(--bf-main);
+      padding: 0 10px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .btn-edit:hover { background: #e3e3fd; }
+
+    .budget-summary {
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Jauge d'engagement DSFR */
+    .progress-bar {
+      height: 18px;
+      background: #eee;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--bf-main);
+      transition: width 0.3s ease;
+    }
+
+    .progress-fill.over { background: var(--dsfr-red); }
+
+    .progress-text {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      pointer-events: none;
+      letter-spacing: 0.2px;
+    }
+
+    .op-footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px dashed var(--border-default);
+      font-size: 0.775rem;
+      color: #666666;
+    }
+
+    /* ============ MODALE ============ */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(22, 22, 22, 0.5);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 5vh 16px;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+
+    .modal-backdrop[hidden] { display: none; }
+
+    .modal-panel {
+      background: #ffffff;
+      border-radius: 6px;
+      width: 100%;
+      max-width: 640px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--bf-main);
+      margin: 0;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      line-height: 1;
+      cursor: pointer;
+      color: var(--text-dark);
+      padding: 4px 8px;
+      flex-shrink: 0;
+    }
+
+    .modal-close:hover { color: var(--dsfr-red); }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .modal-error {
+      background: #fdeceb;
+      border: 1px solid var(--dsfr-red);
+      color: var(--dsfr-red);
+      font-size: 0.85rem;
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin-bottom: 14px;
+    }
+
+    .form-row { margin-bottom: 14px; }
+
+    .form-row label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 4px;
+    }
+
+    .form-row input[type="text"],
+    .form-row input[type="number"],
+    .form-row input[type="date"],
+    .form-row textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid var(--border-default);
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+
+    .form-row textarea { min-height: 70px; resize: vertical; }
+
+    .form-row-checkbox { display: flex; align-items: center; gap: 8px; }
+    .form-row-checkbox label { margin-bottom: 0; }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 16px;
+    }
+
+    .form-readonly {
+      font-size: 0.85rem;
+      color: #444444;
+      background: var(--bg-alt);
+      border-radius: 4px;
+      padding: 10px 12px;
+      margin-bottom: 16px;
+    }
+
+    .form-readonly div + div { margin-top: 4px; }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 8px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border-default);
+    }
+
+    .btn-primary, .btn-secondary {
+      border-radius: 4px;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--bf-main);
+      color: #ffffff;
+      border: 1px solid var(--bf-main);
+    }
+
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: var(--text-dark);
+      border: 1px solid var(--border-default);
+    }
+
+    .modal-kpi-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .modal-kpi-row .kpi-card { flex: 1 1 140px; margin: 0; }
+
+    .modal-op-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .modal-op-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--border-default);
+      border-radius: 4px;
+      padding: 8px 10px;
+    }
+
+    .modal-op-row .modal-op-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .modal-op-row .modal-op-amounts {
+      font-size: 0.8rem;
+      color: #555555;
+      white-space: nowrap;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 12px;
+	    position:sticky;
+      top: 16px;
+      z-index: 999;
+    }
+
+    .btn-print svg {
+      margin-right:0.45rem;
+      flex-shrink: 0;
+    }
+
+    .btn-print:hover { background: #e3e3fd; }
+
+    /* ============ IMPRESSION ============ */
+    @media print {
+      body { padding: 0; }
+
+      .toolbar { display: none; }
+
+      .modal-backdrop { display: none !important; }
+
+      /* Forcer l'impression des couleurs/fonds (désactivés par défaut par les navigateurs) */
+      * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      /* Éviter qu'une carte ou un bloc soit coupé au milieu par un saut de page */
+      .project-block,
+      .op-card,
+      .histo-container,
+      .kpi-card {
+        break-inside: avoid;
+      }
+
+      .year-block { break-before: page; }
+      .year-block:first-of-type { break-before: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <button title="print-btn" type="button" id="print-btn" class="btn-print fr-btn fr-btn--sm">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+        <path d="M7 17H17V22H7V17ZM19 20V15H5V20H3C2.44772 20 2 19.5523 2 19V9C2 8.44772 2.44772 8 3 8H21C21.5523 8 22 8.44772 22 9V19C22 19.5523 21.5523 20 21 20H19ZM5 10V12H8V10H5ZM7 2H17C17.5523 2 18 2.44772 18 3V6H6V3C6 2.44772 6.44772 2 7 2Z"/>
+      </svg>
+      Imprimer
+    </button>
+  </div>
+  <div id="moa-banner"></div>
+  <div id="kpis" class="kpi-grid"></div>
+  <div id="content"></div>
+
+  <!-- Modale unique, réutilisée pour l'édition d'une opération ou la synthèse d'un projet -->
+  <div id="modal-backdrop" class="modal-backdrop" hidden>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title"></h2>
+        <button type="button" class="modal-close" data-action="close-modal" aria-label="Fermer la fenêtre">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+
+  <script>
+    /* =========================================================================
+       CONFIGURATION — noms de colonnes Grist centralisés.
+       Un seul endroit à modifier si une colonne est renommée dans le document.
+       ========================================================================= */
+    const FIELD = {
+      ANNEE: 'Annee_budgetaire',
+      PROJET: 'Projet',
+      ENVELOPPE_PROJET: 'Enveloppe_Projet',
+      MOA: 'Chef_de_projet_MOA',
+      PREV: 'Montant_previsionnel',
+      ENGAGE: 'Montant_engage',
+      RESTE: 'Reste_a_engager',
+      DATE_PREV: 'Date_previsionnelle',
+      DESCRIPTION: 'description_besoin',
+      INTITULE: 'Intitule',
+      ALERTE: 'Alerte',
+      STATUT: 'statut',
+      NATURE: 'nature_depense'
+    };
+
+    const fmtEUR = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+    const briefcaseIconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>`;
+
+    /* =========================================================================
+       ÉTAT GLOBAL — mis à jour à chaque grist.onRecords().
+       Permet aux gestionnaires d'événements délégués (attachés une seule fois)
+       de toujours retrouver les données les plus récentes.
+       ========================================================================= */
+    let recordsById = new Map();  // id de ligne -> enregistrement complet
+    let currentModel = [];        // modèle agrégé par année puis par projet
+
+    /* =========================================================================
+       UTILITAIRES DE LECTURE / FORMATAGE
+       ========================================================================= */
+    function fmtCompactEUR(val) {
+      if (!val || val === 0) return '0 €';
+      if (Math.abs(val) >= 1000000) {
+        return (val / 1000000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' M€';
+      }
+      if (Math.abs(val) >= 1000) {
+        return (val / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' k€';
+      }
+      return fmtEUR.format(val);
+    }
+
+    function getRecValue(rec, keyName) {
+      if (!rec) return null;
+      if (rec[keyName] !== undefined && rec[keyName] !== null) return rec[keyName];
+
+      const target = keyName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      for (const k of Object.keys(rec)) {
+        const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (cleanK === target && rec[k] !== undefined && rec[k] !== null) {
+          return rec[k];
+        }
+      }
+      return null;
+    }
+
+    function parseGristDate(val) {
+      if (val === null || val === undefined || val === '') return null;
+
+      if (val instanceof Date || (typeof val === 'object' && typeof val.getTime === 'function')) {
+        return isNaN(val.getTime()) ? null : val;
+      }
+
+      if (Array.isArray(val)) {
+        for (const v of val) {
+          const res = parseGristDate(v);
+          if (res) return res;
+        }
+        return null;
+      }
+
+      if (typeof val === 'object') {
+        if (val.v !== undefined) return parseGristDate(val.v);
+        if (val.date !== undefined) return parseGristDate(val.date);
+        if (val.path !== undefined) return parseGristDate(val.path);
+      }
+
+      if (typeof val === 'number') {
+        if (isNaN(val) || val <= 0) return null;
+        if (val >= 1900 && val <= 2100) return new Date(val, 0, 1);
+        const ms = val < 1e11 ? val * 1000 : val;
+        const d = new Date(ms);
+        return isNaN(d.getTime()) ? null : d;
+      }
+
+      if (typeof val === 'string') {
+        let s = val.trim();
+        if (!s || s.toLowerCase() === 'n/c' || s.toLowerCase() === 'null') return null;
+
+        s = s.replace(/\s*\([^)]*\)/g, '');
+
+        if (/^\d+$/.test(s)) {
+          return parseGristDate(parseInt(s, 10));
+        }
+
+        const isoMatch = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+        if (isoMatch) {
+          return new Date(parseInt(isoMatch[1], 10), parseInt(isoMatch[2], 10) - 1, parseInt(isoMatch[3], 10));
+        }
+
+        const frMatch = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})/);
+        if (frMatch) {
+          return new Date(parseInt(frMatch[3], 10), parseInt(frMatch[2], 10) - 1, parseInt(frMatch[1], 10));
+        }
+
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) return d;
+      }
+
+      return null;
+    }
+
+    function formatDate(val) {
+      const d = parseGristDate(val);
+      return d ? d.toLocaleDateString('fr-FR') : 'N/C';
+    }
+
+    function getQuarterKey(dateVal) {
+      const d = parseGristDate(dateVal);
+      if (!d) return 'NC';
+      const month = d.getMonth();
+      if (month < 3) return 'T1';
+      if (month < 6) return 'T2';
+      if (month < 9) return 'T3';
+      return 'T4';
+    }
+
+    function getAnnee(rec) {
+      const val = getRecValue(rec, FIELD.ANNEE);
+      if (val === null || val === undefined || val === '') return 'Non renseignée';
+
+      const d = parseGristDate(val);
+      if (d && !isNaN(d.getFullYear())) return d.getFullYear().toString();
+
+      const str = String(val);
+      const m = str.match(/(19|20)\d{2}/);
+      return m ? m[0] : str;
+    }
+
+    function getProjet(rec) {
+      const val = getRecValue(rec, FIELD.PROJET) || getRecValue(rec, FIELD.ENVELOPPE_PROJET);
+      if (!val) return 'Projet non spécifié';
+      if (typeof val === 'object') return val.Intitule || val.nom || val.Projet || 'Projet non spécifié';
+      return String(val);
+    }
+
+    function extractMoaNames(rec) {
+      const val = getRecValue(rec, FIELD.MOA);
+      if (!val) return [];
+      const names = [];
+
+      const parseItem = (item) => {
+        if (!item) return;
+        if (typeof item === 'string' && item.trim()) names.push(item.trim());
+        else if (typeof item === 'object') {
+          const name = item.nom || item.name || item.Intitule || item.label || item.Nom;
+          if (name) names.push(String(name).trim());
+          else if (Array.isArray(item)) item.forEach(parseItem);
+        }
+      };
+
+      if (Array.isArray(val)) val.forEach(parseItem);
+      else parseItem(val);
+
+      return [...new Set(names)].filter(n => n.toLowerCase() !== 'non renseigné' && n.toLowerCase() !== 'n/c');
+    }
+
+    // Renvoie le nom du champ texte réellement utilisé pour le titre d'une opération
+    // (certaines lignes utilisent description_besoin, d'autres Intitule).
+    function getTitleFieldName(rec) {
+      return getRecValue(rec, FIELD.DESCRIPTION) !== null ? FIELD.DESCRIPTION : FIELD.INTITULE;
+    }
+
+    function getTitleText(rec) {
+      return getRecValue(rec, getTitleFieldName(rec)) || '(Sans description)';
+    }
+
+    function createEmptyQuarters() {
+      return {
+        T1: { prev: 0, eng: 0, label: 'T1' },
+        T2: { prev: 0, eng: 0, label: 'T2' },
+        T3: { prev: 0, eng: 0, label: 'T3' },
+        T4: { prev: 0, eng: 0, label: 'T4' },
+        NC: { prev: 0, eng: 0, label: 'H.D.' }
+      };
+    }
+
+    function addRecordToQuarters(quarters, rec, prev, eng) {
+      const qKey = getQuarterKey(getRecValue(rec, FIELD.DATE_PREV));
+      quarters[qKey].prev += prev;
+      quarters[qKey].eng += eng;
+    }
+
+    /* =========================================================================
+       CONSTRUCTION DU MODÈLE AGRÉGÉ
+       Une seule fonction produit la structure Année > Projet > Opérations,
+       réutilisée à la fois pour le rendu principal et pour les modales.
+       ========================================================================= */
+    function buildModel(records) {
+      const byYear = new Map();
+
+      records.forEach(rec => {
+        const annee = getAnnee(rec);
+        const projet = getProjet(rec);
+        const prev = getRecValue(rec, FIELD.PREV) || 0;
+        const eng = getRecValue(rec, FIELD.ENGAGE) || 0;
+
+        if (!byYear.has(annee)) {
+          byYear.set(annee, { annee, prev: 0, eng: 0, quarters: createEmptyQuarters(), projectsByName: new Map() });
+        }
+        const yearEntry = byYear.get(annee);
+        yearEntry.prev += prev;
+        yearEntry.eng += eng;
+        addRecordToQuarters(yearEntry.quarters, rec, prev, eng);
+
+        if (!yearEntry.projectsByName.has(projet)) {
+          yearEntry.projectsByName.set(projet, { projet, prev: 0, eng: 0, quarters: createEmptyQuarters(), moas: new Set(), records: [] });
+        }
+        const projEntry = yearEntry.projectsByName.get(projet);
+        projEntry.prev += prev;
+        projEntry.eng += eng;
+        addRecordToQuarters(projEntry.quarters, rec, prev, eng);
+        extractMoaNames(rec).forEach(m => projEntry.moas.add(m));
+        projEntry.records.push(rec);
+      });
+
+      const sortedYears = [...byYear.values()].sort((a, b) => {
+        if (a.annee === 'Non renseignée') return 1;
+        if (b.annee === 'Non renseignée') return -1;
+        return a.annee.localeCompare(b.annee, undefined, { numeric: true });
+      });
+
+      return sortedYears.map(year => ({
+        ...year,
+        projects: [...year.projectsByName.values()].sort((a, b) => a.projet.localeCompare(b.projet, 'fr'))
+      }));
+    }
+
+    /* =========================================================================
+       RENDU — HISTOGRAMME DE SAISONNALITÉ (inchangé, réutilisé partout)
+       ========================================================================= */
+    function renderBarStyle(val, maxVal) {
+      if (!val || val <= 0) return 'height: 0%; min-height: 0px;';
+      const pct = Math.round((val / maxVal) * 100);
+      return `height: ${pct}%; min-height: 6px;`;
+    }
+
+    function renderHistogramHtml(title, quartersData, isGlobal = false) {
+      const activeKeys = ['T1', 'T2', 'T3', 'T4'];
+      if (quartersData.NC && (quartersData.NC.prev > 0 || quartersData.NC.eng > 0)) {
+        activeKeys.push('NC');
+      }
+
+      const maxVal = Math.max(
+        ...activeKeys.map(k => Math.max(quartersData[k].prev, quartersData[k].eng)),
+        1
+      );
+
+      let barsRowHtml = '';
+      let labelsRowHtml = '';
+
+      activeKeys.forEach(key => {
+        const q = quartersData[key];
+        barsRowHtml += `
+          <div class="histo-bar-col">
+            <div class="histo-bars">
+              <div class="histo-bar bar-prev" style="${renderBarStyle(q.prev, maxVal)}" title="Prévu : ${fmtEUR.format(q.prev)}"></div>
+              <div class="histo-bar bar-eng" style="${renderBarStyle(q.eng, maxVal)}" title="Engagé : ${fmtEUR.format(q.eng)}"></div>
+            </div>
+          </div>`;
+        labelsRowHtml += `
+          <div class="histo-label-col">
+            <div class="histo-label">${q.label}</div>
+            <div class="histo-subtext">${fmtCompactEUR(q.eng)} / ${fmtCompactEUR(q.prev)}</div>
+          </div>`;
+      });
+
+      return `
+        <div class="histo-container ${isGlobal ? 'histo-global' : ''}">
+          <div class="histo-header">
+            <span class="histo-title">${title}</span>
+            <div class="histo-legend">
+              <div class="legend-item"><div class="legend-box prev"></div> Prévu</div>
+              <div class="legend-item"><div class="legend-box eng"></div> Engagé</div>
+            </div>
+          </div>
+          <div class="histo-chart">
+            <div class="histo-bars-row">${barsRowHtml}</div>
+            <div class="histo-labels-row">${labelsRowHtml}</div>
+          </div>
+        </div>`;
+    }
+
+    /* =========================================================================
+       RENDU — CARTES D'OPÉRATION / BLOCS PROJET / BLOCS ANNÉE
+       Les valeurs issues de Grist (titre, statut, nature) passent par
+       un <span> peuplé en textContent après coup pour éviter toute
+       interprétation de balises HTML accidentelle dans le contenu métier.
+       ========================================================================= */
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function renderOperationCard(rec) {
+      const prev = getRecValue(rec, FIELD.PREV) || 0;
+      const engage = getRecValue(rec, FIELD.ENGAGE) || 0;
+      const re = getRecValue(rec, FIELD.RESTE);
+      const reste = (re !== null && re !== undefined) ? re : (prev - engage);
+
+      const opPct = prev > 0 ? Math.round((engage / prev) * 100) : 0;
+      const barPct = Math.min(opPct, 100);
+      const textColor = barPct > 50 ? '#ffffff' : '#161616';
+
+      const titleText = getTitleText(rec);
+      const alerte = getRecValue(rec, FIELD.ALERTE);
+      const statut = getRecValue(rec, FIELD.STATUT);
+      const nature = getRecValue(rec, FIELD.NATURE) || 'N/C';
+
+      return `
+        <div class="op-card ${alerte ? 'has-alert' : ''}" data-action="open-op" data-op-id="${rec.id}">
+          <div class="op-header">
+            <h4 class="op-title">${escapeHtml(titleText)}</h4>
+            <div class="badge-group">
+              ${alerte ? '<span class="fr-badge fr-badge--sm fr-badge--error">Alerte</span>' : ''}
+              ${statut ? `<span class="fr-badge fr-badge--sm fr-badge--info">${escapeHtml(statut)}</span>` : ''}
+            </div>
+          </div>
+
+          <div class="budget-summary">
+            <span><strong>Engagé :</strong> ${fmtEUR.format(engage)} / ${fmtEUR.format(prev)}</span>
+            <span><strong>Reste :</strong> ${fmtEUR.format(reste)}</span>
+          </div>
+
+          <div class="progress-bar">
+            <div class="progress-fill ${engage > prev ? 'over' : ''}" style="width: ${barPct}%"></div>
+            <span class="progress-text" style="color: ${textColor}">${opPct}%</span>
+          </div>
+
+          <div class="op-footer">
+            <span>Nature : ${escapeHtml(nature)}</span>
+            <span>Date prév. : ${formatDate(getRecValue(rec, FIELD.DATE_PREV))}</span>
+          </div>
+        </div>`;
+    }
+
+    function renderProjectBlock(project, yearIdx, projectIdx, showMoa) {
+      const pPct = project.prev > 0 ? Math.round((project.eng / project.prev) * 100) : 0;
+      const projMoaText = [...project.moas].join(', ');
+
+      const opsHtml = project.records.map(renderOperationCard).join('');
+
+      return `
+        <div class="project-block">
+          <div class="project-header">
+            <div class="project-header-main">
+              <h3 class="project-title" data-action="edit-project" data-year-idx="${yearIdx}" data-project-idx="${projectIdx}">
+                ${briefcaseIconSvg}
+                Projet : ${escapeHtml(project.projet)}
+              </h3>
+              ${showMoa && projMoaText ? `<div class="project-moa"><strong>Chef de projet MOA :</strong> ${escapeHtml(projMoaText)}</div>` : ''}
+            </div>
+            <div class="project-header-side">
+              <span class="project-stats">Engagé : ${fmtEUR.format(project.eng)} / ${fmtEUR.format(project.prev)} (${pPct}%)</span>
+            </div>
+          </div>
+
+          ${renderHistogramHtml('Saisonnalité des engagements du projet', project.quarters, false)}
+
+          <div class="op-list">${opsHtml}</div>
+        </div>`;
+    }
+
+    function renderYearBlock(year, yearIdx, showMoa) {
+      const yPct = year.prev > 0 ? Math.round((year.eng / year.prev) * 100) : 0;
+
+      const projectsHtml = year.projects
+        .map((project, projectIdx) => renderProjectBlock(project, yearIdx, projectIdx, showMoa))
+        .join('');
+
+      return `
+        <div class="year-block">
+          <div class="year-header">
+            <h2 class="year-title">Année Budgétaire ${escapeHtml(year.annee)}</h2>
+            <span class="year-stats">Engagé : ${fmtEUR.format(year.eng)} / ${fmtEUR.format(year.prev)} (${yPct}%)</span>
+          </div>
+          ${renderHistogramHtml(`Saisonnalité globale des engagements ${escapeHtml(year.annee)}`, year.quarters, true)}
+          ${projectsHtml}
+        </div>`;
+    }
+
+    /* =========================================================================
+       KPIs GLOBAUX + BANNIÈRE MOA
+       ========================================================================= */
+    function renderMoaBanner(records) {
+      const globalMoas = new Set();
+      records.forEach(r => extractMoaNames(r).forEach(m => globalMoas.add(m)));
+      const moaArray = [...globalMoas];
+
+      if (moaArray.length === 1) {
+        return `<div class="moa-banner"><strong>Chef de projet MOA global :</strong> ${escapeHtml(moaArray[0])}</div>`;
+      }
+      if (moaArray.length > 1) {
+        return `<div class="moa-banner multiple"><strong>⚠️ Chefs de projet MOA multiples (${moaArray.length}) :</strong> ${escapeHtml(moaArray.join(', '))}</div>`;
+      }
+      return '';
+    }
+
+    function renderGlobalKpis(records) {
+      let tPrev = 0, tEngage = 0, tReste = 0;
+      records.forEach(r => {
+        const p = getRecValue(r, FIELD.PREV) || 0;
+        const e = getRecValue(r, FIELD.ENGAGE) || 0;
+        const re = getRecValue(r, FIELD.RESTE);
+        tPrev += p;
+        tEngage += e;
+        tReste += (re !== null && re !== undefined ? re : (p - e));
+      });
+
+      const pctGlobal = tPrev > 0 ? Math.round((tEngage / tPrev) * 100) : 0;
+      let pctClass = 'kpi-pct-low';
+      if (pctGlobal > 100) pctClass = 'kpi-pct-over';
+      else if (pctGlobal >= 85) pctClass = 'kpi-pct-high';
+      else if (pctGlobal >= 50) pctClass = 'kpi-pct-mid';
+
+      return `
+        <div class="kpi-card kpi-prev">
+          <div class="kpi-title">Prévisionnel Total</div>
+          <div class="kpi-value">${fmtEUR.format(tPrev)}</div>
+        </div>
+        <div class="kpi-card kpi-engage">
+          <div class="kpi-title">Total Engagé</div>
+          <div class="kpi-value">${fmtEUR.format(tEngage)}</div>
+        </div>
+        <div class="kpi-card kpi-reste">
+          <div class="kpi-title">Reste à Engager</div>
+          <div class="kpi-value">${fmtEUR.format(tReste)}</div>
+        </div>
+        <div class="kpi-card ${pctClass}">
+          <div class="kpi-title">Taux d'Engagement</div>
+          <div class="kpi-value">${pctGlobal}%</div>
+        </div>`;
+    }
+
+    /* =========================================================================
+       MODALE — logique d'ouverture / fermeture
+       ========================================================================= */
+    const modalBackdropEl = document.getElementById('modal-backdrop');
+    const modalTitleEl = document.getElementById('modal-title');
+    const modalBodyEl = document.getElementById('modal-body');
+
+    function openModal(titleText, bodyHtml) {
+      modalTitleEl.textContent = titleText;
+      modalBodyEl.innerHTML = bodyHtml;
+      modalBackdropEl.hidden = false;
+      const firstInput = modalBodyEl.querySelector('input, textarea, button');
+      if (firstInput) firstInput.focus();
+    }
+
+    function closeModal() {
+      modalBackdropEl.hidden = true;
+      modalBodyEl.innerHTML = '';
+    }
+
+    function showModalError(message) {
+      let errorEl = modalBodyEl.querySelector('.modal-error');
+      if (!errorEl) {
+        errorEl = document.createElement('div');
+        errorEl.className = 'modal-error';
+        modalBodyEl.prepend(errorEl);
+      }
+      errorEl.textContent = message;
+    }
+
+    /* ---- Modale d'aperçu (lecture seule) d'une opération ------------------
+       L'édition réelle est déléguée à un widget Grist natif "Card" / "Card List"
+       lié à ce widget via l'option "Select By" (voir grist.setCursorPos ci-dessous
+       dans selectRecord()). Cette modale ne fait qu'un rappel synthétique. ------ */
+    function renderOperationPreview(rec) {
+      const titleText = getTitleText(rec);
+      const statut = getRecValue(rec, FIELD.STATUT) || 'N/C';
+      const nature = getRecValue(rec, FIELD.NATURE) || 'N/C';
+      const prev = getRecValue(rec, FIELD.PREV) || 0;
+      const engage = getRecValue(rec, FIELD.ENGAGE) || 0;
+      const re = getRecValue(rec, FIELD.RESTE);
+      const reste = (re !== null && re !== undefined) ? re : (prev - engage);
+      const dateVal = formatDate(getRecValue(rec, FIELD.DATE_PREV));
+      const alerte = !!getRecValue(rec, FIELD.ALERTE);
+
+      const annee = escapeHtml(getAnnee(rec));
+      const projet = escapeHtml(getProjet(rec));
+      const moas = escapeHtml(extractMoaNames(rec).join(', ') || 'N/C');
+
+      return `
+        <div class="form-readonly">
+          <div><strong>Année budgétaire :</strong> ${annee}</div>
+          <div><strong>Projet :</strong> ${projet}</div>
+          <div><strong>Chef de projet MOA :</strong> ${moas}</div>
+        </div>
+
+        <div class="form-row"><label>Description du besoin</label><div>${escapeHtml(titleText)}</div></div>
+
+        <div class="form-grid-2">
+          <div class="form-row"><label>Statut</label><div>${escapeHtml(statut)}${alerte ? ' — ⚠️ Alerte' : ''}</div></div>
+          <div class="form-row"><label>Nature de dépense</label><div>${escapeHtml(nature)}</div></div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-row"><label>Montant prévisionnel</label><div>${fmtEUR.format(prev)}</div></div>
+          <div class="form-row"><label>Montant engagé</label><div>${fmtEUR.format(engage)}</div></div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-row"><label>Reste à engager</label><div>${fmtEUR.format(reste)}</div></div>
+          <div class="form-row"><label>Date prévisionnelle</label><div>${dateVal}</div></div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" data-action="close-modal">Fermer</button>
+        </div>`;
+    }
+
+    function openOperationModal(rec) {
+      selectRecord(rec.id); // pousse la sélection vers le widget Card lié éventuel
+      openModal(`Aperçu de la programmation`, renderOperationPreview(rec));
+    }
+
+    /* ---- Modale de synthèse d'un projet ----------------------------------- */
+    function renderProjectSummary(yearIdx, projectIdx) {
+      const year = currentModel[yearIdx];
+      const project = year.projects[projectIdx];
+      const pPct = project.prev > 0 ? Math.round((project.eng / project.prev) * 100) : 0;
+
+      const opsRowsHtml = project.records.map(rec => {
+        const prev = getRecValue(rec, FIELD.PREV) || 0;
+        const eng = getRecValue(rec, FIELD.ENGAGE) || 0;
+        return `
+          <div class="modal-op-row">
+            <span class="modal-op-label">${escapeHtml(getTitleText(rec))}</span>
+            <span class="modal-op-amounts">${fmtCompactEUR(eng)} / ${fmtCompactEUR(prev)}</span>
+            <button type="button" class="btn-edit" data-action="open-op" data-op-id="${rec.id}">👁️ Aperçu</button>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="form-readonly">
+          <div><strong>Année budgétaire :</strong> ${escapeHtml(year.annee)}</div>
+          <div><strong>Chef(s) de projet MOA :</strong> ${escapeHtml([...project.moas].join(', ') || 'N/C')}</div>
+        </div>
+
+        <div class="modal-kpi-row">
+          <div class="kpi-card kpi-prev">
+            <div class="kpi-title">Prévisionnel</div>
+            <div class="kpi-value">${fmtEUR.format(project.prev)}</div>
+          </div>
+          <div class="kpi-card kpi-engage">
+            <div class="kpi-title">Engagé</div>
+            <div class="kpi-value">${fmtEUR.format(project.eng)}</div>
+          </div>
+          <div class="kpi-card ${pPct > 100 ? 'kpi-pct-over' : 'kpi-pct-mid'}">
+            <div class="kpi-title">Taux</div>
+            <div class="kpi-value">${pPct}%</div>
+          </div>
+        </div>
+
+        ${renderHistogramHtml('Saisonnalité du projet', project.quarters, false)}
+
+        <h3 style="font-size: 0.9rem; color: var(--bf-main);">Opérations du projet (${project.records.length})</h3>
+        <div class="modal-op-list">${opsRowsHtml}</div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" data-action="close-modal">Fermer</button>
+        </div>`;
+    }
+
+    function openProjectModal(yearIdx, projectIdx) {
+      const project = currentModel[yearIdx].projects[projectIdx];
+      openModal(`Projet : ${project.projet}`, renderProjectSummary(yearIdx, projectIdx));
+    }
+
+    /* =========================================================================
+       SÉLECTION DE LIGNE (synchronisation avec la grille Grist)
+       ========================================================================= */
+    function selectRecord(id) {
+      if (typeof grist.setCursorPos === 'function') {
+        grist.setCursorPos({ rowId: id }).catch(() => {});
+      }
+    }
+
+    /* =========================================================================
+       DÉLÉGATION D'ÉVÉNEMENTS — un seul écouteur pour toute l'UI + la modale.
+       Évite les attributs onclick="" générés dynamiquement (plus sûr et plus
+       lisible qu'un onclick par carte avec l'id interpolé dans une chaîne).
+       ========================================================================= */
+    document.addEventListener('click', (event) => {
+      const target = event.target.closest('[data-action]');
+      if (!target) return;
+
+      const action = target.dataset.action;
+
+      switch (action) {
+        case 'open-op': {
+          const rec = recordsById.get(Number(target.dataset.opId));
+          if (rec) openOperationModal(rec);
+          break;
+        }
+        case 'edit-project':
+          openProjectModal(Number(target.dataset.yearIdx), Number(target.dataset.projectIdx));
+          break;
+        case 'close-modal':
+          closeModal();
+          break;
+      }
+    });
+
+    document.getElementById('print-btn').addEventListener('click', () => {
+      window.print();
+    });
+
+    // Fermeture via clic sur le fond ou touche Échap.
+    modalBackdropEl.addEventListener('click', (event) => {
+      if (event.target === modalBackdropEl) closeModal();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !modalBackdropEl.hidden) closeModal();
+    });
+
+    /* =========================================================================
+       INITIALISATION GRIST
+       Accès en lecture seule : ce widget ne fait qu'afficher et sélectionner
+       des lignes (selectRecord() -> grist.setCursorPos()). L'édition réelle
+       se fait dans un widget Grist natif "Card" / "Card List" placé sur la
+       même page et lié à ce widget via l'option "Select By" du panneau de
+       configuration Grist.
+       `allowSelectBy: true` est indispensable : sans lui, ce widget custom
+       n'apparaît PAS dans la liste "Select By" des AUTRES widgets (il peut
+       en revanche se lier lui-même à d'autres widgets sans cette option).
+       ========================================================================= */
+    grist.ready({
+      requiredAccess: 'read table',
+      allowSelectedRow: true,
+      allowSelectBy: true
+    });
+
+    grist.onRecords((records) => {
+      const contentEl = document.getElementById('content');
+      const kpiEl = document.getElementById('kpis');
+      const moaEl = document.getElementById('moa-banner');
+
+      if (!records || records.length === 0) {
+        contentEl.innerHTML = '<p>Aucune programmation trouvée.</p>';
+        kpiEl.innerHTML = '';
+        moaEl.innerHTML = '';
+        recordsById = new Map();
+        currentModel = [];
+        return;
+      }
+
+      recordsById = new Map(records.map(r => [r.id, r]));
+      currentModel = buildModel(records);
+
+      const globalMoaCount = new Set(records.flatMap(extractMoaNames)).size;
+      const showMoaPerProject = globalMoaCount > 1;
+
+      moaEl.innerHTML = renderMoaBanner(records);
+      kpiEl.innerHTML = renderGlobalKpis(records);
+      contentEl.innerHTML = currentModel
+        .map((year, yearIdx) => renderYearBlock(year, yearIdx, showMoaPerProject))
+        .join('');
+    });
+  </script>
+</body>
+</html>
