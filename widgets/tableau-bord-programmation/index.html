@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-fr-theme="light" data-fr-scheme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -329,7 +329,7 @@
       white-space: nowrap;
     }
 
-    .fr-badge, .btn-edit {
+    .fr-badge {
       white-space: nowrap;
       height: 26px;
       display: inline-flex;
@@ -344,16 +344,7 @@
     .fr-badge.fr-badge--error { border: 1px solid var(--dsfr-red); }
     .fr-badge.fr-badge--info { border: 1px solid var(--bf-main); }
 
-    .btn-edit {
-      background: #ffffff;
-      border: 1px solid var(--bf-main);
-      color: var(--bf-main);
-      padding: 0 10px;
-      cursor: pointer;
-      line-height: 1;
-    }
-
-    .btn-edit:hover { background: #e3e3fd; }
+    /* .btn-edit supprimé : remplacé par fr-btn fr-btn--tertiary fr-btn--sm (voir renderOperationCard) */
 
     .budget-summary {
       font-size: 0.85rem;
@@ -405,66 +396,11 @@
       color: #666666;
     }
 
-    /* ============ MODALE ============ */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(22, 22, 22, 0.5);
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 5vh 16px;
-      z-index: 1000;
-      overflow-y: auto;
-    }
-
-    .modal-backdrop[hidden] { display: none; }
-
-    .modal-panel {
-      background: #ffffff;
-      border-radius: 6px;
-      width: 100%;
-      max-width: 640px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .modal-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border-default);
-    }
-
-    .modal-title {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--bf-main);
-      margin: 0;
-    }
-
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 1.1rem;
-      line-height: 1;
-      cursor: pointer;
-      color: var(--text-dark);
-      padding: 4px 8px;
-      flex-shrink: 0;
-    }
-
-    .modal-close:hover { color: var(--dsfr-red); }
-
-    .modal-body {
-      padding: 20px;
-      overflow-y: auto;
-    }
-
+    /* ============ MODALE ============
+       Le conteneur (fond, panneau, en-tête, croix de fermeture) est désormais
+       le composant natif DSFR `fr-modal` : sa structure et son style viennent
+       de dsfr.min.css + dsfr.module.min.js, ils ne sont plus définis ici.
+       Seule la mise en forme du CONTENU injecté dans la modale reste custom. */
     .modal-error {
       background: #fdeceb;
       border: 1px solid var(--dsfr-red);
@@ -529,27 +465,8 @@
       border-top: 1px dashed var(--border-default);
     }
 
-    .btn-primary, .btn-secondary {
-      border-radius: 4px;
-      padding: 8px 16px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .btn-primary {
-      background: var(--bf-main);
-      color: #ffffff;
-      border: 1px solid var(--bf-main);
-    }
-
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-
-    .btn-secondary {
-      background: #ffffff;
-      color: var(--text-dark);
-      border: 1px solid var(--border-default);
-    }
+    /* .btn-primary / .btn-secondary supprimés : les boutons de la modale
+       utilisent désormais les classes natives fr-btn / fr-btn--secondary. */
 
     .modal-kpi-row {
       display: flex;
@@ -609,7 +526,7 @@
 
       .toolbar { display: none; }
 
-      .modal-backdrop { display: none !important; }
+      dialog.fr-modal { display: none !important; }
 
       /* Forcer l'impression des couleurs/fonds (désactivés par défaut par les navigateurs) */
       * {
@@ -644,18 +561,30 @@
   <div id="kpis" class="kpi-grid"></div>
   <div id="content"></div>
 
-  <!-- Modale unique, réutilisée pour l'édition d'une opération ou la synthèse d'un projet -->
-  <div id="modal-backdrop" class="modal-backdrop" hidden>
-    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div class="modal-header">
-        <h2 class="modal-title" id="modal-title"></h2>
-        <button type="button" class="modal-close" data-action="close-modal" aria-label="Fermer la fenêtre">✕</button>
+  <!-- Modale unique (composant natif DSFR fr-modal), réutilisée pour l'édition
+       d'une opération ou la synthèse d'un projet. Ouverte/fermée via l'API JS
+       DSFR (dsfr(el).modal.disclose() / .conceal()), voir openModal()/closeModal(). -->
+  <dialog id="widget-modal" class="fr-modal" aria-labelledby="modal-title">
+    <div class="fr-container fr-container--fluid fr-container-md">
+      <div class="fr-grid-row fr-grid-row--center">
+        <div class="fr-col-12 fr-col-md-8 fr-col-lg-6">
+          <div class="fr-modal__body">
+            <div class="fr-modal__header">
+              <button type="button" class="fr-btn fr-btn--close" aria-controls="widget-modal" data-action="close-modal">Fermer</button>
+            </div>
+            <div class="fr-modal__content">
+              <h2 class="fr-modal__title" id="modal-title"></h2>
+              <div id="modal-body"></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="modal-body" id="modal-body"></div>
     </div>
-  </div>
+  </dialog>
 
   <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/dsfr.module.min.js" type="module"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/dsfr.nomodule.min.js" nomodule></script>
 
   <script>
     /* =========================================================================
@@ -1111,20 +1040,39 @@
     /* =========================================================================
        MODALE — logique d'ouverture / fermeture
        ========================================================================= */
-    const modalBackdropEl = document.getElementById('modal-backdrop');
+    const modalEl = document.getElementById('widget-modal');
     const modalTitleEl = document.getElementById('modal-title');
     const modalBodyEl = document.getElementById('modal-body');
+
+    // Récupère l'instance DSFR associée à la modale, une fois le module DSFR chargé.
+    // `window.dsfr` n'existe qu'après l'exécution de dsfr.module.min.js (type="module",
+    // donc potentiellement après ce script) : on y accède à la demande, pas au chargement.
+    function getModalInstance() {
+      if (typeof window.dsfr !== 'function') return null;
+      return window.dsfr(modalEl);
+    }
 
     function openModal(titleText, bodyHtml) {
       modalTitleEl.textContent = titleText;
       modalBodyEl.innerHTML = bodyHtml;
-      modalBackdropEl.hidden = false;
+      const instance = getModalInstance();
+      if (instance) {
+        instance.modal.disclose();
+      } else {
+        // Filet de sécurité si le module DSFR n'est pas encore initialisé.
+        modalEl.showModal();
+      }
       const firstInput = modalBodyEl.querySelector('input, textarea, button');
       if (firstInput) firstInput.focus();
     }
 
     function closeModal() {
-      modalBackdropEl.hidden = true;
+      const instance = getModalInstance();
+      if (instance) {
+        instance.modal.conceal();
+      } else {
+        modalEl.close();
+      }
       modalBodyEl.innerHTML = '';
     }
 
@@ -1182,7 +1130,7 @@
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn-secondary" data-action="close-modal">Fermer</button>
+          <button type="button" class="fr-btn fr-btn--secondary" data-action="close-modal">Fermer</button>
         </div>`;
     }
 
@@ -1204,7 +1152,7 @@
           <div class="modal-op-row">
             <span class="modal-op-label">${escapeHtml(getTitleText(rec))}</span>
             <span class="modal-op-amounts">${fmtCompactEUR(eng)} / ${fmtCompactEUR(prev)}</span>
-            <button type="button" class="btn-edit" data-action="open-op" data-op-id="${rec.id}">👁️ Aperçu</button>
+            <button type="button" class="fr-btn fr-btn--tertiary fr-btn--sm" data-action="open-op" data-op-id="${rec.id}">👁️ Aperçu</button>
           </div>`;
       }).join('');
 
@@ -1235,7 +1183,7 @@
         <div class="modal-op-list">${opsRowsHtml}</div>
 
         <div class="modal-actions">
-          <button type="button" class="btn-secondary" data-action="close-modal">Fermer</button>
+          <button type="button" class="fr-btn fr-btn--secondary" data-action="close-modal">Fermer</button>
         </div>`;
     }
 
@@ -1283,13 +1231,8 @@
       window.print();
     });
 
-    // Fermeture via clic sur le fond ou touche Échap.
-    modalBackdropEl.addEventListener('click', (event) => {
-      if (event.target === modalBackdropEl) closeModal();
-    });
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && !modalBackdropEl.hidden) closeModal();
-    });
+    // Fermeture via clic sur le fond ou touche Échap : gérée nativement par le
+    // composant DSFR fr-modal (dsfr.module.min.js), plus besoin de l'implémenter ici.
 
     /* =========================================================================
        INITIALISATION GRIST
