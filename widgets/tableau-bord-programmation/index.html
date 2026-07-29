@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light only">
+  <!-- DSFR CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/dsfr.min.css">
   <link rel="stylesheet" href="https://jbo-dares.github.io/grist-custom-widgets/widgets/common/theme.css">
   <style>
@@ -592,7 +593,9 @@
     </div>
   </dialog>
 
+  <!-- Grist API -->
   <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+  <!-- DSFR JS -->
   <script src="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/dsfr.module.min.js" type="module"></script>
   <script src="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/dsfr.nomodule.min.js" nomodule></script>
 
@@ -1046,6 +1049,39 @@
           <div class="kpi-value">${pctGlobal}%</div>
         </div>`;
     }
+
+    /* =========================================================================
+       THÈME — force le clair via l'API DSFR (voir explication dans page-couverture)
+       ========================================================================= */
+    /* =========================================================================
+       THÈME — force le clair via l'API DSFR et verrouille contre toute réapplication
+       ultérieure du sombre (Grist injecte data-grist-theme/data-grist-appearance sur
+       <html> quand l'espace Grist hôte est en thème sombre, ce qui peut faire repasser
+       data-fr-theme à "dark" après notre premier forçage — voir page-couverture pour le
+       détail des deux mécanismes en jeu).
+       ========================================================================= */
+    function forceLightScheme() {
+      if (window.dsfr) {
+        window.dsfr(document.documentElement).scheme.scheme = 'light';
+      } else {
+        document.documentElement.setAttribute('data-fr-theme', 'light');
+        document.documentElement.setAttribute('data-fr-scheme', 'light');
+        document.documentElement.style.colorScheme = 'light';
+      }
+    }
+    if (window.dsfr) {
+      forceLightScheme();
+    } else {
+      document.addEventListener('dsfr:ready', forceLightScheme, { once: true });
+    }
+    new MutationObserver(() => {
+      if (document.documentElement.getAttribute('data-fr-theme') !== 'light') {
+        forceLightScheme();
+      }
+    }).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-fr-theme', 'data-fr-scheme', 'data-grist-theme', 'data-grist-appearance']
+    });
 
     /* =========================================================================
        MODALE — logique d'ouverture / fermeture

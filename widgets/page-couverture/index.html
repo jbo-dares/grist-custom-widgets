@@ -1,18 +1,12 @@
 <!DOCTYPE html>
 <html lang="fr" data-fr-theme="light" data-fr-scheme="light">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light only">
-    <!-- Grist API -->
-    <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="color-scheme" content="light only">
     <!-- DSFR CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/dsfr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/utility/utilities.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/utility/icons/icons.min.css">
     <link rel="stylesheet" href="https://jbo-dares.github.io/grist-custom-widgets/widgets/common/theme.css">
-    <!-- Custom JS -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         .fr-header,
         .fr-header__brand {
@@ -20,7 +14,6 @@
             --hover: transparent;
         }
     </style>
-	<!-- Perso -->
 </head>
 <body>
 
@@ -59,8 +52,13 @@
         </div>
     </main>
 
+    <!-- Grist API -->
+    <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+    <!-- DSFR JS -->
     <script src="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/dsfr.module.min.js" type="module"></script>
     <script src="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/dsfr.nomodule.min.js" nomodule></script>
+    <!-- Custom JS -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <script>
         // 0. Personnalisation de marked.js pour l'adapter au DSFR
@@ -71,6 +69,39 @@
             }
         };
         marked.use({ renderer });
+
+        // 0bis. Force le thème clair via l'API officielle du DSFR, et verrouille contre
+        // toute réapplication ultérieure du thème sombre.
+        // Deux sources peuvent repasser la page en sombre :
+        //  - le DSFR lui-même, via une préférence "scheme" persistée dans le localStorage
+        //    du domaine jbo-dares.github.io (partagé entre tous les widgets qui y sont servis) ;
+        //  - Grist, qui injecte data-grist-theme / data-grist-appearance sur <html> pour
+        //    signaler aux widgets que l'espace Grist hôte est en thème sombre, ce qui peut
+        //    entraîner un repassage de data-fr-theme à "dark" après notre premier forçage.
+        // On force donc une première fois au chargement, puis on surveille en continu
+        // l'attribut data-fr-theme et on le recorrige immédiatement s'il change.
+        function forceLightScheme() {
+            if (window.dsfr) {
+                window.dsfr(document.documentElement).scheme.scheme = 'light';
+            } else {
+                document.documentElement.setAttribute('data-fr-theme', 'light');
+                document.documentElement.setAttribute('data-fr-scheme', 'light');
+                document.documentElement.style.colorScheme = 'light';
+            }
+        }
+        if (window.dsfr) {
+            forceLightScheme();
+        } else {
+            document.addEventListener('dsfr:ready', forceLightScheme, { once: true });
+        }
+        new MutationObserver(() => {
+            if (document.documentElement.getAttribute('data-fr-theme') !== 'light') {
+                forceLightScheme();
+            }
+        }).observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-fr-theme', 'data-fr-scheme', 'data-grist-theme', 'data-grist-appearance']
+        });
 
         // 1. Configuration des colonnes Grist
         grist.ready({
