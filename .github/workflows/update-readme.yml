@@ -1,0 +1,28 @@
+name: Mettre à jour le tableau des widgets dans le README
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "widgets/**"
+      - "scripts/generate-readme-table.mjs"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Générer le tableau des widgets
+        run: node scripts/generate-readme-table.mjs
+
+      - name: Commit et push si README modifié
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: mise à jour automatique du tableau des widgets"
+          file_pattern: README.md

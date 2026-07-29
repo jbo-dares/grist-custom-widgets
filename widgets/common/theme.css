@@ -1,0 +1,24 @@
+/*
+ * Tokens de design partagés entre les widgets Grist (DSFR).
+ * A importer APRÈS la feuille dsfr.min.css officielle.
+ * Ces valeurs reprennent les couleurs officielles du DSFR (Bleu France #000091)
+ * pour garantir une identité visuelle homogène entre les widgets custom,
+ * même quand ils n'utilisent pas directement les classes de composants DSFR.
+ */
+:root {
+  --bf-main: #000091;      /* Bleu France (couleur d'action DSFR) */
+  --bf-light: #6a6af4;
+  --bg-alt: #f6f6f6;
+  --border-default: #e5e5e5;
+  --dsfr-green: #18753c;
+  --dsfr-green-bg: #e6f5e9;
+  --dsfr-orange: #b35900;
+  --dsfr-orange-bg: #fef4e6;
+  --dsfr-red: #ce0500;
+  --text-dark: #161616;
+}
+
+body {
+  font-family: Marianne, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--text-dark);
+}

@@ -8,11 +8,11 @@
     <!-- DSFR CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/dsfr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/utility/utilities.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/utility/icons/icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/utility/icons/icons.min.css">
+    <link rel="stylesheet" href="https://jbo-dares.github.io/grist-custom-widgets/widgets/common/theme.css">
     <!-- Custom JS -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        //body { background-color: var(--background-default-grey); }
         .fr-header,
         .fr-header__brand {
             filter: none !important;
@@ -64,16 +64,10 @@
         // 0. Personnalisation de marked.js pour l'adapter au DSFR
         const renderer = {
             blockquote(token) {
-                // 'token' est un objet. On demande au parseur interne de marked 
-                // de compiler le texte et les balises HTML situés à l'intérieur du bloc.
                 const insideHtml = this.parser.parse(token.tokens);
-                
-                // On encapsule le résultat dans la classe DSFR
                 return `<div class="fr-highlight">${insideHtml}</div>`;
             }
         };
-
-        // On applique cette règle de rendu à marked
         marked.use({ renderer });
 
         // 1. Configuration des colonnes Grist
@@ -83,8 +77,9 @@
                 { name: "nom_service", title: "Titre principal", type: "Text", description: "Titre principal" },
                 { name: "baseline", title: "Sous-titre", type: "Text", optional: true, description: "Sous-titre" },
                 { name: "chapeau", title: "Baseline / Chapeau", type: "Text", optional: true, description: "Chapeau" },
-                { name: "masque", title: "Texte / Masque (Markdown)", type: "Text", description: "Contenu" },
-                { name: "logo", title: "Logo", type: "Attachments", optional: true, description: "Logo à afficher à droite du bloc marque" }
+                { name: "masque", title: "Texte / Masque (Markdown)", type: "Text", description: "Contenu. Utilisez {cle} pour insérer une valeur agrégée (voir colonne 'Données agrégées')." },
+                { name: "logo", title: "Logo", type: "Attachments", optional: true, description: "Logo à afficher à droite du bloc marque" },
+                { name: "donnees_agregees", title: "Données agrégées (JSON)", type: "Text", optional: true, description: "JSON produit par une colonne formule Grist (agrégat/summary table), ex: {\"nb_projets\": 12, \"budget_total\": \"450 000 €\"}. Chaque clé devient utilisable dans le masque via {nb_projets}, {budget_total}, etc." }
             ],
             requiredAccess: 'full'
         });
@@ -118,6 +113,17 @@
             }
         }
 
+        // 2bis. Remplace les {cle} présents dans un texte par les valeurs d'un contexte
+        // Les clés non trouvées dans le contexte sont laissées telles quelles (utile pour
+        // repérer une faute de frappe dans le masque plutôt que de faire disparaître le texte).
+        function templatize(text, context) {
+            if (!text) return text;
+            return text.replace(/\{(\w+)\}/g, (match, key) => {
+                const value = context[key];
+                return (value !== undefined && value !== null) ? String(value) : match;
+            });
+        }
+
         // 3. Fonction principale de mise à jour
         async function updateContent(mapped) {
             if (!mapped) {
@@ -142,8 +148,20 @@
             document.getElementById('txt-soustitre').textContent = mapped.baseline || '';
             document.getElementById('txt-baseline').textContent = mapped.chapeau || '';
 
+            // Construction du contexte de substitution : colonnes du record + JSON agrégé
+            let aggData = {};
+            if (mapped.donnees_agregees) {
+                try {
+                    aggData = JSON.parse(mapped.donnees_agregees);
+                } catch (error) {
+                    console.error('JSON invalide dans "Données agrégées" :', error);
+                }
+            }
+            const context = { ...mapped, ...aggData };
+
             if (mapped.masque) {
-                document.getElementById('txt-masque').innerHTML = marked.parse(mapped.masque);
+                const texteAvecDonnees = templatize(mapped.masque, context);
+                document.getElementById('txt-masque').innerHTML = marked.parse(texteAvecDonnees);
             } else {
                 document.getElementById('txt-masque').innerHTML = "<p><em>Aucun masque renseigné pour cette page.</em></p>";
             }

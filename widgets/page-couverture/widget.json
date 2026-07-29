@@ -1,0 +1,4 @@
+{
+  "title": "page-couverture",
+  "description": "Page de garde DSFR : bloc marque, titre/sous-titre, chapeau, contenu markdown (avec placeholders {cle} pour données agrégées)."
+}
