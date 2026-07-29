@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light only">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@gouvfr/dsfr@1.13.1/dist/dsfr/dsfr.min.css">
   <link rel="stylesheet" href="https://jbo-dares.github.io/grist-custom-widgets/widgets/common/theme.css">
   <style>
@@ -332,6 +333,7 @@
     .fr-badge {
       white-space: nowrap;
       height: 26px;
+      padding: 0 0.5rem;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -341,8 +343,16 @@
       border-radius: 4px;
     }
 
-    .fr-badge.fr-badge--error { border: 1px solid var(--dsfr-red); }
-    .fr-badge.fr-badge--info { border: 1px solid var(--bf-main); }
+    .fr-badge.fr-badge--error {
+      background-color: #ffe9e9; /* DSFR --background-contrast-error (thème clair) */
+      color: var(--dsfr-red);
+      border: 1px solid var(--dsfr-red);
+    }
+    .fr-badge.fr-badge--info {
+      background-color: #e8edff; /* DSFR --background-contrast-info (thème clair) */
+      color: var(--bf-main);
+      border: 1px solid var(--bf-main);
+    }
 
     /* .btn-edit supprimé : remplacé par fr-btn fr-btn--tertiary fr-btn--sm (voir renderOperationCard) */
 
