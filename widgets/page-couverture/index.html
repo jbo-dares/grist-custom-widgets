@@ -26,8 +26,8 @@
                             <div class="fr-header__logo">
                                 <p class="fr-logo" id="intitule-officiel">République<br>Française</p>
                             </div>
-                            <div class="fr-header__operator" id="operator-section" style="display: none;">
-                                <img class="fr-responsive-img" src="" id="logo-img" alt="Logo Partenaire" style="max-height: 5rem;">
+                            <div class="fr-header__operator" id="operator-section" hidden>
+                                <img class="fr-responsive-img" src="" id="logo-img" alt="" style="max-height: 5rem;">
                             </div>
                         </div>
                         <div class="fr-header__service">
@@ -103,9 +103,27 @@
             attributeFilter: ['data-fr-theme', 'data-fr-scheme', 'data-grist-theme', 'data-grist-appearance']
         });
 
+        // 0ter. DÉSIGNATION DE LA LIGNE À AFFICHER — deux mécanismes cumulables.
+        //
+        //  1. Paramètre d'URL, saisi dans "Enter Custom URL" du panneau Grist :
+        //        .../page/index.html?page=Tableau%20de%20bord%20-%20Programmation
+        //     Le widget cherche alors, parmi les lignes qu'il reçoit, celle dont la
+        //     colonne mappée "Clé de page" vaut cette valeur. Pratique quand le widget
+        //     est posé sur une page où la source n'est pas filtrée.
+        //
+        //  2. Aucun paramètre : comportement historique, le widget affiche la PREMIÈRE
+        //     ligne reçue. C'est le filtre du widget (ou son "Select By") qui décide.
+        //
+        // Les deux se combinent : le paramètre n'est qu'une sélection SUPPLÉMENTAIRE
+        // appliquée aux lignes déjà filtrées par Grist. Si la ligne visée est absente
+        // du jeu filtré, on le signale et on retombe sur la première ligne plutôt que
+        // d'afficher une page vide.
+        const clePage = new URLSearchParams(location.search).get('page');
+
         // 1. Configuration des colonnes Grist
         grist.ready({
             columns: [
+                { name: "cle_page", title: "Clé de page", type: "Text", optional: true, description: "Colonne identifiant la page (ex. « Page »). À mapper uniquement si vous ciblez une ligne via ?page= dans l'URL du widget." },
                 { name: "intitule_officiel", title: "Bloc marque", type: "Text", optional: true },
                 { name: "nom_service", title: "Titre principal", type: "Text", description: "Titre principal" },
                 { name: "baseline", title: "Sous-titre", type: "Text", optional: true, description: "Sous-titre" },
@@ -118,31 +136,30 @@
         });
 
         // 2. Fonction de gestion du Logo
-        async function updateLogo(logoAttachments) {
+        // La cellule Attachments peut arriver sous forme de liste Grist (['L', 12, 15])
+        // ou de simple tableau d'identifiants selon le chemin de lecture : on ne retient
+        // que les valeurs numériques, ce qui traite au passage le cas de la liste vide.
+        async function updateLogo(cellule) {
             const operatorSection = document.getElementById('operator-section');
             const logoImg = document.getElementById('logo-img');
+            const ids = Array.isArray(cellule) ? cellule.filter(v => typeof v === 'number') : [];
 
-            if (!logoAttachments || !Array.isArray(logoAttachments) || logoAttachments.length === 0) {
-                operatorSection.style.display = 'none';
+            if (ids.length === 0) {
+                operatorSection.hidden = true;
                 return;
             }
 
             try {
                 const tokenInfo = await grist.docApi.getAccessToken({ readOnly: true });
-                const attachmentId = logoAttachments.at(-1);
-                const logoUrl = `${tokenInfo.baseUrl}/attachments/${attachmentId}/download?auth=${tokenInfo.token}`;
+                const attachmentId = ids[ids.length - 1];
 
-                logoImg.src = logoUrl;
-                logoImg.onload = () => {
-                    operatorSection.style.display = 'block';
-                };
-                logoImg.onerror = () => {
-                    operatorSection.style.display = 'none';
-                };
+                logoImg.onload = () => { operatorSection.hidden = false; };
+                logoImg.onerror = () => { operatorSection.hidden = true; };
+                logoImg.src = `${tokenInfo.baseUrl}/attachments/${attachmentId}/download?auth=${tokenInfo.token}`;
 
             } catch (error) {
                 console.error('Erreur accès attachement:', error);
-                operatorSection.style.display = 'none';
+                operatorSection.hidden = true;
             }
         }
 
@@ -174,7 +191,7 @@
             if (mapped.logo) {
                 await updateLogo(mapped.logo);
             } else {
-                document.getElementById('operator-section').style.display = 'none';
+                document.getElementById('operator-section').hidden = true;
             }
 
             document.getElementById('txt-titre').textContent = mapped.nom_service || 'Titre non renseigné';
@@ -200,14 +217,32 @@
             }
         }
 
+        // 3bis. Choix de la ligne parmi celles reçues (voir le commentaire 0ter).
+        function choisirLigne(mappedRecords) {
+            if (mappedRecords.length === 0) return null;
+            if (!clePage) return mappedRecords[0];
+
+            const cible = mappedRecords.find(m => m.cle_page === clePage);
+            if (cible) return cible;
+
+            console.warn(
+                `[page] Aucune ligne « ${clePage} » parmi les ${mappedRecords.length} ligne(s) reçue(s). ` +
+                `Vérifiez le mapping de la colonne "Clé de page" et le filtre du widget. ` +
+                `Repli sur la première ligne.`
+            );
+            return mappedRecords[0];
+        }
+
         // 4. Réception du flux
         grist.onRecords(async function (records, mappings) {
-            if (records && records.length > 0) {
-                const mapped = grist.mapColumnNames(records[0], mappings);
-                await updateContent(mapped);
-            } else {
+            if (!records || records.length === 0) {
                 await updateContent(null);
+                return;
             }
+            const mappedRecords = records
+                .map(r => grist.mapColumnNames(r, mappings))
+                .filter(Boolean);
+            await updateContent(choisirLigne(mappedRecords));
         });
     </script>
 </body>

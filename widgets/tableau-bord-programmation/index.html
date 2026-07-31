@@ -515,13 +515,58 @@
       color: #555555;
       white-space: nowrap;
     }
-    .toolbar {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 12px;
-	    position:sticky;
-      top: 16px;
+    /* ============ BANDEAU D'EN-TÊTE (bloc marque + bouton imprimer) ============
+       Le bloc marque DSFR n'est correctement stylé qu'à l'intérieur d'un
+       conteneur .fr-header : on conserve donc le balisage complet du composant.
+       Le bouton imprimer est placé dans la même ligne (fr-header__body-row est
+       un conteneur flex), poussé à droite par margin-left:auto — plus robuste
+       en petite largeur que fr-header__tools, qui se replie sur mobile. */
+    .fr-header,
+    .fr-header__brand {
+      filter: none !important;
+      --hover: transparent;
+    }
+
+    #dashboard-header {
+      position: sticky;
+      top: 0;
       z-index: 999;
+      background-color: #ffffff;
+      margin: -16px -16px 16px;
+    }
+
+    #dashboard-header .fr-header__body-row {
+      align-items: center;
+      gap: 16px;
+    }
+
+    #dashboard-header .header-actions {
+      margin-left: auto;
+      flex: 0 0 auto;
+    }
+
+    /* Version compacte : ce bandeau coiffe un tableau de bord, pas une page de
+       contenu. On réduit le logo partenaire et l'échelle typographique du bloc
+       service pour ne pas manger la hauteur utile du widget. */
+    #dashboard-header #logo-img {
+      max-height: 3rem;
+      width: auto;
+    }
+
+    #dashboard-header .fr-header__service-title {
+      font-size: 1.125rem;
+      line-height: 1.5rem;
+      margin-bottom: 0;
+    }
+
+    #dashboard-header .fr-header__service-tagline {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      margin-top: 2px;
+    }
+
+    #dashboard-header .fr-header__service {
+      padding-bottom: 0.5rem;
     }
 
     .btn-print svg {
@@ -535,7 +580,16 @@
     @media print {
       body { padding: 0; }
 
-      .toolbar { display: none; }
+      /* Le bandeau doit figurer sur le document imprimé : seul le bouton
+         d'action disparaît. Le sticky est neutralisé, sans quoi certains
+         navigateurs répètent ou tronquent l'en-tête entre les pages. */
+      .header-actions { display: none; }
+
+      #dashboard-header {
+        position: static;
+        margin: 0 0 16px;
+        break-inside: avoid;
+      }
 
       dialog.fr-modal { display: none !important; }
 
@@ -560,14 +614,37 @@
 </head>
 <body>
 
-  <div class="toolbar">
-    <button title="print-btn" type="button" id="print-btn" class="btn-print fr-btn fr-btn--sm">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-        <path d="M7 17H17V22H7V17ZM19 20V15H5V20H3C2.44772 20 2 19.5523 2 19V9C2 8.44772 2.44772 8 3 8H21C21.5523 8 22 8.44772 22 9V19C22 19.5523 21.5523 20 21 20H19ZM5 10V12H8V10H5ZM7 2H17C17.5523 2 18 2.44772 18 3V6H6V3C6 2.44772 6.44772 2 7 2Z"/>
-      </svg>
-      Imprimer
-    </button>
-  </div>
+  <header role="banner" class="fr-header" id="dashboard-header">
+    <div class="fr-header__body">
+      <div class="fr-container fr-container--fluid">
+        <div class="fr-header__body-row">
+          <div class="fr-header__brand">
+            <div class="fr-header__brand-top">
+              <div class="fr-header__logo">
+                <p class="fr-logo" id="intitule-officiel">République<br>Française</p>
+              </div>
+              <div class="fr-header__operator" id="operator-section" hidden>
+                <img class="fr-responsive-img" src="" id="logo-img" alt="">
+              </div>
+            </div>
+            <div class="fr-header__service">
+              <p class="fr-header__service-title" id="txt-titre">&nbsp;</p>
+              <p class="fr-header__service-tagline" id="txt-soustitre" hidden></p>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button title="Imprimer le tableau de bord" type="button" id="print-btn" class="btn-print fr-btn fr-btn--sm">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+                <path d="M7 17H17V22H7V17ZM19 20V15H5V20H3C2.44772 20 2 19.5523 2 19V9C2 8.44772 2.44772 8 3 8H21C21.5523 8 22 8.44772 22 9V19C22 19.5523 21.5523 20 21 20H19ZM5 10V12H8V10H5ZM7 2H17C17.5523 2 18 2.44772 18 3V6H6V3C6 2.44772 6.44772 2 7 2Z"/>
+              </svg>
+              Imprimer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
   <div id="moa-banner"></div>
   <div id="kpis" class="kpi-grid"></div>
   <div id="content"></div>
@@ -601,6 +678,38 @@
 
   <script>
     /* =========================================================================
+       VERROUILLAGE DU THÈME CLAIR
+       Deux sources peuvent repasser la page en sombre :
+        - le DSFR lui-même, via une préférence "scheme" persistée dans le
+          localStorage du domaine qui sert les widgets (partagé entre eux) ;
+        - Grist, qui injecte data-grist-theme / data-grist-appearance sur <html>
+          quand l'espace hôte est en thème sombre.
+       On force au chargement, puis on surveille l'attribut et on le recorrige.
+       ========================================================================= */
+    function forceLightScheme() {
+      if (window.dsfr) {
+        window.dsfr(document.documentElement).scheme.scheme = 'light';
+      } else {
+        document.documentElement.setAttribute('data-fr-theme', 'light');
+        document.documentElement.setAttribute('data-fr-scheme', 'light');
+        document.documentElement.style.colorScheme = 'light';
+      }
+    }
+    if (window.dsfr) {
+      forceLightScheme();
+    } else {
+      document.addEventListener('dsfr:ready', forceLightScheme, { once: true });
+    }
+    new MutationObserver(() => {
+      if (document.documentElement.getAttribute('data-fr-theme') !== 'light') {
+        forceLightScheme();
+      }
+    }).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-fr-theme', 'data-fr-scheme', 'data-grist-theme', 'data-grist-appearance']
+    });
+
+    /* =========================================================================
        CONFIGURATION — noms de colonnes Grist centralisés.
        Un seul endroit à modifier si une colonne est renommée dans le document.
        ========================================================================= */
@@ -619,6 +728,46 @@
       STATUT: 'statut',
       NATURE: 'nature_depense'
     };
+
+    /* =========================================================================
+       BLOC MARQUE — intitulé officiel, logo, titre et sous-titre lus dans la
+       table de référence des textes, avec les mêmes noms de colonnes que les
+       widgets "page" (voir leur grist.ready({columns:[...]})).
+
+       Pourquoi pas le mapping de colonnes de Grist ? Parce que le mapping ne
+       s'applique qu'à la table SOURCE du widget, qui est ici la programmation.
+       On lit donc la table de référence via docApi.fetchTable(), et toute la
+       configuration passe par la chaîne de requête de l'URL du widget, saisie
+       dans "Enter Custom URL" du panneau Grist :
+
+         .../dashboard/index.html?page=Tableau%20de%20bord%20-%20Programmation
+
+       Paramètres reconnus, tous optionnels (valeur par défaut entre crochets) :
+         page          clé de la ligne à lire      [Tableau de bord - Programmation]
+         table         table de référence          [Ref_textes_information]
+         colPage       colonne clé                 [Page]
+         colTitre      titre principal             [nom_service]
+         colSousTitre  sous-titre                  [baseline]
+         colLogo       logo (Attachments)          [logo]
+         colIntitule   intitulé officiel           [intitule_officiel]
+
+       Attention : ce sont des chaînes de caractères. Un renommage de colonne
+       dans Grist ne les met pas à jour — vérifier la casse dans "Données brutes".
+       ========================================================================= */
+    const params = new URLSearchParams(location.search);
+
+    const REF_TABLE = params.get('table') || 'Ref_textes_information';
+    const REF_FIELD = {
+      PAGE: params.get('colPage') || 'Page',
+      TITRE: params.get('colTitre') || 'nom_service',
+      SOUS_TITRE: params.get('colSousTitre') || 'baseline',
+      LOGO: params.get('colLogo') || 'logo',
+      INTITULE: params.get('colIntitule') || 'intitule_officiel'
+    };
+
+    const CLE_PAGE_DEFAUT = 'Tableau de bord - Programmation';
+    const clePageUrl = params.get('page');
+    let clePage = clePageUrl || CLE_PAGE_DEFAUT;
 
     const fmtEUR = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
     const briefcaseIconSvg = `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>`;
@@ -1277,24 +1426,106 @@
       window.print();
     });
 
+    /* =========================================================================
+       CHARGEMENT DU BLOC MARQUE
+       fetchTable renvoie des données orientées colonnes ({colId: [valeurs]}) :
+       on cherche l'index de la ligne dont Page vaut la clé, puis on lit les
+       autres colonnes à ce même index.
+       Nécessite requiredAccess:'full' — 'read table' ne donne accès qu'à la
+       table source du widget.
+       ========================================================================= */
+    /* Logo partenaire : identique aux widgets "page". Les pièces jointes sont
+       servies par le document Grist, il faut donc un jeton d'accès temporaire.
+       fetchTable renvoie une cellule Attachments sous forme de liste Grist
+       (['L', 12, 15]) : on ne garde que les identifiants numériques, ce qui
+       traite au passage le cas d'une liste vide (['L']). */
+    async function updateLogo(cellule) {
+      const section = document.getElementById('operator-section');
+      const img = document.getElementById('logo-img');
+      const ids = Array.isArray(cellule) ? cellule.filter(v => typeof v === 'number') : [];
+
+      if (ids.length === 0) {
+        section.hidden = true;
+        return;
+      }
+      try {
+        const tokenInfo = await grist.docApi.getAccessToken({ readOnly: true });
+        img.onload = () => { section.hidden = false; };
+        img.onerror = () => { section.hidden = true; };
+        img.src = `${tokenInfo.baseUrl}/attachments/${ids[ids.length - 1]}/download?auth=${tokenInfo.token}`;
+      } catch (error) {
+        console.error('[bloc marque] accès à la pièce jointe impossible :', error);
+        section.hidden = true;
+      }
+    }
+
+    async function chargerBlocMarque() {
+      const titreEl = document.getElementById('txt-titre');
+      const sousTitreEl = document.getElementById('txt-soustitre');
+      const intituleEl = document.getElementById('intitule-officiel');
+      try {
+        const t = await grist.docApi.fetchTable(REF_TABLE);
+        const i = (t[REF_FIELD.PAGE] || []).indexOf(clePage);
+        if (i === -1) {
+          console.warn(`[bloc marque] aucune ligne « ${clePage} » dans ${REF_TABLE}`);
+          titreEl.textContent = 'Tableau de bord';
+          sousTitreEl.hidden = true;
+          document.getElementById('operator-section').hidden = true;
+          return;
+        }
+
+        const lire = (col) => (t[col] || [])[i];
+
+        const intitule = lire(REF_FIELD.INTITULE);
+        intituleEl.innerHTML = intitule
+          ? String(intitule).replace(/\n/g, '<br>')
+          : 'République<br>Française';
+
+        titreEl.textContent = lire(REF_FIELD.TITRE) || 'Tableau de bord';
+
+        const sousTitre = lire(REF_FIELD.SOUS_TITRE) || '';
+        sousTitreEl.textContent = sousTitre;
+        sousTitreEl.hidden = !sousTitre;
+
+        await updateLogo(lire(REF_FIELD.LOGO));
+      } catch (error) {
+        // Le bandeau contient le bouton imprimer : on ne le masque jamais,
+        // on se contente d'un titre de repli.
+        console.error('[bloc marque] lecture impossible :', error);
+        titreEl.textContent = 'Tableau de bord';
+        sousTitreEl.hidden = true;
+      }
+    }
+
     // Fermeture via clic sur le fond ou touche Échap : gérée nativement par le
     // composant DSFR fr-modal (dsfr.module.min.js), plus besoin de l'implémenter ici.
 
     /* =========================================================================
        INITIALISATION GRIST
-       Accès en lecture seule : ce widget ne fait qu'afficher et sélectionner
-       des lignes (selectRecord() -> grist.setCursorPos()). L'édition réelle
-       se fait dans un widget Grist natif "Card" / "Card List" placé sur la
-       même page et lié à ce widget via l'option "Select By" du panneau de
-       configuration Grist.
+       Ce widget ne modifie aucune donnée : il affiche et sélectionne des lignes
+       (selectRecord() -> grist.setCursorPos()). L'édition réelle se fait dans un
+       widget Grist natif "Card" / "Card List" placé sur la même page et lié à ce
+       widget via l'option "Select By" du panneau de configuration Grist.
        `allowSelectBy: true` est indispensable : sans lui, ce widget custom
        n'apparaît PAS dans la liste "Select By" des AUTRES widgets (il peut
        en revanche se lier lui-même à d'autres widgets sans cette option).
+       `requiredAccess: 'full'` (et non plus 'read table') est requis depuis
+       l'ajout du bloc marque : docApi.fetchTable() lit une table qui n'est pas
+       la source de ce widget. Ce changement demande une nouvelle acceptation
+       de l'accès dans le panneau de configuration.
        ========================================================================= */
     grist.ready({
-      requiredAccess: 'read table',
+      requiredAccess: 'full',
       allowSelectedRow: true,
       allowSelectBy: true
+    });
+
+    /* onOptions est appelé une première fois au démarrage avec les options
+       courantes, puis à chaque modification : il sert donc aussi de point
+       d'entrée pour le premier chargement du bandeau. */
+    grist.onOptions((options) => {
+      clePage = clePageUrl || (options && options.clePage) || CLE_PAGE_DEFAUT;
+      chargerBlocMarque();
     });
 
     grist.onRecords((records) => {
