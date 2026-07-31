@@ -13,6 +13,16 @@
             filter: none !important;
             --hover: transparent;
         }
+
+        /* Un widget Grist est déjà contraint en largeur par la mise en page du
+           document : le plafond de 78rem que le DSFR applique à .fr-container
+           au-delà de 78em de viewport ne fait que gaspiller de la place. */
+        .fr-container,
+        .fr-container-lg,
+        .fr-container-md,
+        .fr-container-sm {
+            max-width: none;
+        }
     </style>
 </head>
 <body>
@@ -21,7 +31,7 @@
         <div class="fr-header__body">
             <div class="fr-container">
                 <div class="fr-header__body-row">
-                    <div class="fr-header__brand fr-enlarge-link">
+                    <div class="fr-header__brand">
                         <div class="fr-header__brand-top">
                             <div class="fr-header__logo">
                                 <p class="fr-logo" id="intitule-officiel">République<br>Française</p>
@@ -31,9 +41,7 @@
                             </div>
                         </div>
                         <div class="fr-header__service">
-                            <a href="#" title="Accueil">
-                                <p class="fr-header__service-title" id="txt-titre">En attente de configuration...</p>
-                            </a>
+                            <p class="fr-header__service-title" id="txt-titre">En attente de configuration...</p>
                             <p class="fr-header__service-tagline" id="txt-soustitre"></p>
                         </div>
                     </div>
@@ -181,6 +189,17 @@
                 return;
             }
 
+            // Erreur de ciblage : on l'affiche dans le widget plutôt que de laisser
+            // croire, en repliant sur une autre ligne, que la configuration est bonne.
+            if (mapped.erreur) {
+                document.getElementById('txt-titre').textContent = "⚠️ Ciblage de page impossible";
+                document.getElementById('txt-soustitre').textContent = '';
+                document.getElementById('txt-baseline').textContent = mapped.erreur;
+                document.getElementById('txt-masque').innerHTML = '';
+                document.getElementById('operator-section').hidden = true;
+                return;
+            }
+
             if (mapped.intitule_officiel) {
                 const intitule = mapped.intitule_officiel.replace(/\n/g, '<br>');
                 document.getElementById('intitule-officiel').innerHTML = intitule;
@@ -218,19 +237,24 @@
         }
 
         // 3bis. Choix de la ligne parmi celles reçues (voir le commentaire 0ter).
-        function choisirLigne(mappedRecords) {
+        // `mappings` sert à détecter le cas le plus piégeux : ?page= renseigné dans
+        // l'URL alors que la colonne "Clé de page" n'est pas mappée. Sans ce contrôle,
+        // la recherche échoue silencieusement et TOUTES les instances du widget
+        // affichent la même première ligne.
+        function choisirLigne(mappedRecords, mappings) {
             if (mappedRecords.length === 0) return null;
             if (!clePage) return mappedRecords[0];
+
+            if (!mappings || !mappings.cle_page) {
+                console.error('[page] ?page= est renseigné mais la colonne « Clé de page » n\'est pas mappée.');
+                return { erreur: `Colonne « Clé de page » non mappée : impossible de cibler « ${clePage} ».` };
+            }
 
             const cible = mappedRecords.find(m => m.cle_page === clePage);
             if (cible) return cible;
 
-            console.warn(
-                `[page] Aucune ligne « ${clePage} » parmi les ${mappedRecords.length} ligne(s) reçue(s). ` +
-                `Vérifiez le mapping de la colonne "Clé de page" et le filtre du widget. ` +
-                `Repli sur la première ligne.`
-            );
-            return mappedRecords[0];
+            console.error(`[page] Aucune ligne « ${clePage} » parmi les ${mappedRecords.length} ligne(s) reçue(s).`);
+            return { erreur: `Aucune ligne « ${clePage} » dans les données reçues. Vérifiez le filtre du widget.` };
         }
 
         // 4. Réception du flux
@@ -242,7 +266,7 @@
             const mappedRecords = records
                 .map(r => grist.mapColumnNames(r, mappings))
                 .filter(Boolean);
-            await updateContent(choisirLigne(mappedRecords));
+            await updateContent(choisirLigne(mappedRecords, mappings));
         });
     </script>
 </body>

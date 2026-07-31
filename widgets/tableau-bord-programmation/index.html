@@ -243,7 +243,7 @@
     .histo-bars {
       display: flex;
       align-items: flex-end;
-      gap: 4px;
+      gap: 1px;
       width: 90%;
       max-width: 120px;
       height: 100%;
@@ -252,7 +252,7 @@
 
     .histo-bar {
       flex: 1;
-      border-radius: 3px 3px 0 0;
+      border-radius: 0;
       transition: height 0.2s ease;
     }
 
@@ -538,6 +538,15 @@
     #dashboard-header .fr-header__body-row {
       align-items: center;
       gap: 16px;
+    }
+
+    /* Un tableau de bord occupe toute la largeur disponible du widget : on
+       neutralise le plafond de 78rem que le DSFR applique à .fr-container
+       au-delà de 78em de viewport. */
+    #dashboard-header .fr-container,
+    #dashboard-header .fr-container--fluid {
+      max-width: none;
+      width: 100%;
     }
 
     #dashboard-header .header-actions {
@@ -1459,13 +1468,28 @@
       }
     }
 
+    /* Résolution tolérante à la casse. Un identifiant de colonne Grist est
+       sensible à la casse ($Logo ≠ $logo) et c'est la source d'erreur la plus
+       fréquente sur ce genre de configuration : on absorbe l'écart, mais on le
+       journalise pour pouvoir le corriger à la source. */
+    function colonne(t, nom) {
+      if (t[nom]) return t[nom];
+      const cle = Object.keys(t).find(k => k.toLowerCase() === String(nom).toLowerCase());
+      if (cle) {
+        console.warn(`[bloc marque] colonne « ${nom} » introuvable dans ${REF_TABLE}, « ${cle} » utilisée à la place.`);
+        return t[cle];
+      }
+      console.warn(`[bloc marque] colonne « ${nom} » absente de ${REF_TABLE}.`);
+      return undefined;
+    }
+
     async function chargerBlocMarque() {
       const titreEl = document.getElementById('txt-titre');
       const sousTitreEl = document.getElementById('txt-soustitre');
       const intituleEl = document.getElementById('intitule-officiel');
       try {
         const t = await grist.docApi.fetchTable(REF_TABLE);
-        const i = (t[REF_FIELD.PAGE] || []).indexOf(clePage);
+        const i = (colonne(t, REF_FIELD.PAGE) || []).indexOf(clePage);
         if (i === -1) {
           console.warn(`[bloc marque] aucune ligne « ${clePage} » dans ${REF_TABLE}`);
           titreEl.textContent = 'Tableau de bord';
@@ -1474,7 +1498,7 @@
           return;
         }
 
-        const lire = (col) => (t[col] || [])[i];
+        const lire = (col) => (colonne(t, col) || [])[i];
 
         const intitule = lire(REF_FIELD.INTITULE);
         intituleEl.innerHTML = intitule
