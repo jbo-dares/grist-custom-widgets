@@ -532,7 +532,8 @@
       top: 0;
       z-index: 999;
       background-color: #ffffff;
-      margin: -16px -16px 16px;
+      margin: -16px -16px 0;
+	  width: auto;
     }
 
     #dashboard-header .fr-header__body-row {
@@ -553,12 +554,16 @@
       margin-left: auto;
       flex: 0 0 auto;
     }
+	
+	#dashboard-header .header-actions button{
+		margin-right: 1rem;
+	}
 
     /* Version compacte : ce bandeau coiffe un tableau de bord, pas une page de
        contenu. On réduit le logo partenaire et l'échelle typographique du bloc
        service pour ne pas manger la hauteur utile du widget. */
     #dashboard-header #logo-img {
-      max-height: 3rem;
+      max-height: 5rem;
       width: auto;
     }
 
